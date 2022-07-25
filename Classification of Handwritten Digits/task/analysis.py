@@ -7,9 +7,10 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import Normalizer
 
 
-def fit_predict_eval(model, features_train, features_test, target_train, target_test):
+def fit_predict_eval(model, features_train, features_test, target_train, target_test, prt=False):
     # here you fit the model
     model.fit(features_train, target_train)
     # make a prediction
@@ -17,7 +18,8 @@ def fit_predict_eval(model, features_train, features_test, target_train, target_
     # calculate accuracy and save it to score
     score = accuracy_score(target_test, pred)
 
-    print(f'Model: {model}\nAccuracy: {round(score, 3)}\n')
+    if prt:
+        print(f'Model: {model}\nAccuracy: {round(score, 3)}\n')
     return score
 
 
@@ -29,6 +31,8 @@ x_train = x_train.reshape(rows, cols)
 y_class = np.unique(y_train)
 
 x_train, x_test, y_train, y_test = train_test_split(x_train[:6000], y_train[:6000], train_size=0.7, random_state=40)
+x_train_norm = Normalizer().fit_transform(x_train)
+x_test_norm = Normalizer().fit_transform(x_test)
 
 models = (KNeighborsClassifier(),
           DecisionTreeClassifier(random_state=40),
@@ -40,10 +44,18 @@ model_names = ['KNeighborsClassifier',
                'LogisticRegression',
                'RandomForestClassifier']
 
-best = (0, 0.)
+best = {}
+comp = [0, 0]
 for i in range(4):
     acc = fit_predict_eval(models[i], x_train, x_test, y_train, y_test)
-    if acc > best[1]:
-        best = i, acc
-
-print(f'The answer to the question: {model_names[best[0]]} - {round(best[1], 3)}')
+    acc1 = fit_predict_eval(models[i], x_train_norm, x_test_norm, y_train, y_test, True)
+    best[model_names[i]] = acc1
+    if acc1 > acc:
+        comp[1] += 1
+    else:
+        comp[0] += 1
+# print(best)
+sort = sorted(best, key=best.get, reverse=True)
+# print(sort)
+print(f"The answer to the 1st question: {'yes' if comp[1] > comp[0] else 'no'}")
+print(f'The answer to the 2nd question: {sort[0]} - {round(best[sort[0]], 3)}, {sort[1]} - {round(best[sort[1]], 3)}')
